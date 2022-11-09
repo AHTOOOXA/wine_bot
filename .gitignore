@@ -1,2 +1,5 @@
 venv
 config.py
+database.ini
+test.py
+bot.py

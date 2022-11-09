@@ -1,25 +1,43 @@
-import asyncio
-from aiogram import Bot, Dispatcher, types
-
+import datetime
+import logging
+import time
 import config
+import schedule
+from aiogram import executor
 
-BOT_TOKEN = config.token
+import bot
+import telergam_manager
+from db_manager import Database
+import parsing
+import logging
+db = Database()
 
 
-async def start_handler(event: types.Message):
-    await event.answer(
-        f"Hello, {event.from_user.get_mention(as_html=True)} 👋!",
-        parse_mode=types.ParseMode.HTML,
-    )
+def main():
+    logging.basicConfig(level=logging.INFO)
+
+    # REFACTOR
+    if config.first_run:
+        config.first_run = False
+        db.create_wine_table()
+    daily_routine()
+    schedule.every(24).hours.do(daily_routine)
+    while True:
+        schedule.run_pending()
 
 
-async def main():
-    bot = Bot(token=BOT_TOKEN)
-    try:
-        disp = Dispatcher(bot=bot)
-        disp.register_message_handler(start_handler, commands={"start", "restart"})
-        await disp.start_polling()
-    finally:
-        await bot.close()
+def daily_routine():
+    parsing.scrap()
+    db.rate_new_wines()
+    db.clean_up()
+    for wine in db.get_good_wines():
+        telergam_manager.post_to_telegram(wine)
 
-asyncio.run(main())
+
+def test_f():
+    pass
+
+
+if __name__ == '__main__':
+    main()
+    # test_f()
