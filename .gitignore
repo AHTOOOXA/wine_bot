@@ -3,3 +3,4 @@ config.py
 database.ini
 test.py
 bot.py
+database.ini
